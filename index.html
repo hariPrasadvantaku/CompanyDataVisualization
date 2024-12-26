@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Data Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+        }
+        #company-list {
+            width: 25%;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            height: 100vh;
+        }
+        #company-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        #company-list li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+        #company-list li:hover {
+            background-color: #f0f0f0;
+        }
+        #chart-container {
+            width: 75%;
+            padding: 20px;
+        }
+        canvas {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="company-list">
+        <h3>Company List</h3>
+        <ul id="companies"></ul>
+    </div>
+    <div id="chart-container">
+        <h3>Charts</h3>
+        <canvas id="chart"></canvas>
+    </div>
+    <script>
+        let jsonData;
+
+        // Load the data from JSON
+        async function loadData() {
+            const response = await fetch('data.json'); // Make sure this file is in the same directory
+            jsonData = await response.json();
+            populateCompanyList();
+        }
+
+        // Populate the company list
+        function populateCompanyList() {
+            const companyList = document.getElementById('companies');
+            const companies = [...new Set(jsonData.map(item => item.index_name))];
+            companies.forEach(company => {
+                const li = document.createElement('li');
+                li.textContent = company;
+                li.onclick = () => displayChart(company);
+                companyList.appendChild(li);
+            });
+        }
+
+        // Display chart for the selected company
+        function displayChart(companyName) {
+            const companyData = jsonData.filter(item => item.index_name === companyName);
+            const labels = companyData.map(item => item.index_date);
+            const openValues = companyData.map(item => item.open_index_value);
+            const closeValues = companyData.map(item => item.closing_index_value);
+
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (window.chartInstance) window.chartInstance.destroy(); // Destroy previous chart instance
+
+            window.chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Open Index Value',
+                            data: openValues,
+                            borderColor: 'blue',
+                            fill: false
+                        },
+                        {
+                            label: 'Closing Index Value',
+                            data: closeValues,
+                            borderColor: 'green',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: `Chart for ${companyName}`
+                        }
+                    }
+                }
+            });
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
